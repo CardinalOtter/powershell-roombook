@@ -329,7 +329,6 @@ if (-not (Get-Module -ListAvailable -Name ExchangeOnlineManagement)) {
 
 # Prompt the user for their Exchange Online administrator UPN.
 # Secure credential prompt with MFA
-$cred = Get-Credential -Message "Exchange Online Admin Credentials (MFA required)"
 
 # Validate Exchange Online module version
 $minVersion = [version]"3.0"
@@ -342,7 +341,7 @@ if (-not $module -or $module.Version -lt $minVersion) {
 # Use a try-catch block to handle potential connection errors.
 try {
   Write-Host "Connecting to Exchange Online..." -ForegroundColor Cyan
-  Connect-ExchangeOnline -Credential $cred -UseMultiFactor -ErrorAction Stop
+  Connect-ExchangeOnline -ErrorAction Stop
   Write-Host "Connected to Exchange Online successfully." -ForegroundColor Green
 }
 catch {
