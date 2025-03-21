@@ -129,6 +129,11 @@ function Grant-SignageAccess {
   Write-Verbose "Entering Grant-SignageAccess function"
 
   $signageGroup = Read-Host "Enter the email address of the digital signage access group"
+  
+  if (-not ($signageGroup -match '^[^@]+@[^@]+\.[^@]+$') -or -not (Get-Recipient $signageGroup -ErrorAction SilentlyContinue)) {
+      Write-Host "Invalid email format or non-existent recipient: $signageGroup" -ForegroundColor Red
+      return
+  }
 
   Write-Host "Granting Reviewer access to $($signageGroup) on $($roomMailbox)'s calendar..." -ForegroundColor Cyan
 
@@ -181,6 +186,11 @@ function Remove-UserPermissions {
   Write-Verbose "Entering Remove-UserPermissions function"
 
   $userToRemove = Read-Host "Enter the email address of the user to remove permissions for"
+  
+  if (-not ($userToRemove -match '^[^@]+@[^@]+\.[^@]+$') -or -not (Get-Recipient $userToRemove -ErrorAction SilentlyContinue)) {
+      Write-Host "Invalid email format or non-existent recipient: $userToRemove" -ForegroundColor Red
+      return
+  }
 
   Write-Host "Removing permissions for $($userToRemove) from $($roomMailbox)'s calendar..." -ForegroundColor Cyan
 
@@ -318,13 +328,21 @@ if (-not (Get-Module -ListAvailable -Name ExchangeOnlineManagement)) {
 # --- Connect to Exchange Online ---
 
 # Prompt the user for their Exchange Online administrator UPN.
-$adminUPN = Read-Host "Enter your Exchange Online admin UPN"
+# Secure credential prompt with MFA
+$cred = Get-Credential -Message "Exchange Online Admin Credentials (MFA required)"
+
+# Validate Exchange Online module version
+$minVersion = [version]"3.0"
+$module = Get-Module ExchangeOnlineManagement -ListAvailable | Select-Object -First 1
+if (-not $module -or $module.Version -lt $minVersion) {
+    Write-Host "Requires ExchangeOnlineManagement module v3.0+ - Found: $($module.Version)" -ForegroundColor Red
+    exit
+}
 
 # Use a try-catch block to handle potential connection errors.
 try {
-  # Connect to Exchange Online using the provided UPN.  MFA is handled automatically.
   Write-Host "Connecting to Exchange Online..." -ForegroundColor Cyan
-  Connect-ExchangeOnline -UserPrincipalName $adminUPN -ErrorAction Stop
+  Connect-ExchangeOnline -Credential $cred -UseMultiFactor -ErrorAction Stop
   Write-Host "Connected to Exchange Online successfully." -ForegroundColor Green
 }
 catch {
